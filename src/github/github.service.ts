@@ -1,10 +1,11 @@
+import { EmailService } from './../email/email.service';
 import { Injectable } from '@nestjs/common';
 import { CreateGithubDto } from './dto/create-github.dto';
 import { UpdateGithubDto } from './dto/update-github.dto';
 import axios from 'axios';
-
 @Injectable()
 export class GithubService {
+  constructor(private readonly emailService: EmailService) { }
   create(createGithubDto: CreateGithubDto) {
     return 'This action adds a new github';
   }
@@ -23,7 +24,7 @@ export class GithubService {
       },
     };
     const res = await axios(config);
-    const data =await this.getRepoExtraInfoByStar(res.data.data.rows);
+    const data = await this.getRepoExtraInfoByStar(res.data.data.rows);
     return {
       data
     };
@@ -48,24 +49,41 @@ export class GithubService {
         docUrl: `https://cdn.jsdelivr.net/gh/${item.repo_name}/README.md`,
         url: `https://github.com/${item.repo_name}`,
       };
-    }).slice(0,1);
-    for(let i = 0;i<list.length;i++) {
+    }).slice(0, 1);
+    for (let i = 0; i < list.length; i++) {
       const item = list[i]
       const baseInfo = await this.getRepoExtraInfo(item.repoName);
-      console.log("🚀 ~ GithubService ~ getRepoExtraInfoByStar ~ baseInfo:", baseInfo)
       list[i] = {
         ...list[i],
         ...baseInfo
       }
     }
     console.log('list', list)
+    const {
+      name,url,lang,stars,docUrl,forks,license
+    } = list[0]
+    // 调用邮件服务发送邮件
+    await this.emailService.sendEmail({
+      to: 'lihk180542@gmail.com',
+      subject: 'Github项目推荐',
+      text: JSON.stringify(list),
+      html: `<div>
+      <p>开源项目：${name}</p>
+      <p>项目地址：${url}</p>
+      <p>开发语言：${lang}</p>
+      <p>项目星星：${stars}</p>
+      <p>项目文档：${docUrl}</p>
+      <p>项目forks：${forks}</p>
+      <p>开源协议：${license}</p>
+      </div>`
+    }
+    );
     return list;
   }
 
   async getRepoExtraInfo(name) {
     try {
       const response = await axios.get(`https://api.github.com/repos/${name}`);
-      console.log("🚀 ~ GithubService ~ getRepoExtraInfo ~ response:", response)
       return {
         stars: response.data.stargazers_count,
         forks: response.data.forks_count,

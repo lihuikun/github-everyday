@@ -1,3 +1,4 @@
+import { CozeService } from './../coze/coze.service';
 import { EmailService } from './../email/email.service';
 import { Injectable } from '@nestjs/common';
 import { CreateGithubDto } from './dto/create-github.dto';
@@ -5,7 +6,7 @@ import { UpdateGithubDto } from './dto/update-github.dto';
 import axios from 'axios';
 @Injectable()
 export class GithubService {
-  constructor(private readonly emailService: EmailService) { }
+  constructor(private readonly emailService: EmailService, private readonly cozeService: CozeService) { }
   create(createGithubDto: CreateGithubDto) {
     return 'This action adds a new github';
   }
@@ -58,27 +59,27 @@ export class GithubService {
         ...baseInfo
       }
     }
-    console.log('list', list)
     const {
-      name,url,lang,stars,docUrl,forks,license
+      name, url, lang, stars, docUrl, forks, license
     } = list[0]
+    const cozeRes = this.cozeService.coze(url)
     // 调用邮件服务发送邮件
-    await this.emailService.sendEmail({
-      to: 'lihk180542@gmail.com',
-      subject: 'Github项目推荐',
-      text: JSON.stringify(list),
-      html: `<div>
-      <p>开源项目：${name}</p>
-      <p>项目地址：${url}</p>
-      <p>开发语言：${lang}</p>
-      <p>项目星星：${stars}</p>
-      <p>项目文档：${docUrl}</p>
-      <p>项目forks：${forks}</p>
-      <p>开源协议：${license}</p>
-      </div>`
-    }
-    );
-    return list;
+    // await this.emailService.sendEmail({
+    //   to: 'lihk180542@gmail.com',
+    //   subject: 'Github项目推荐',
+    //   text: JSON.stringify(list),
+    //   html: `<div>
+    //   <p>开源项目：${name}</p>
+    //   <p>项目地址：${url}</p>
+    //   <p>开发语言：${lang}</p>
+    //   <p>项目星星：${stars}</p>
+    //   <p>项目文档：${docUrl}</p>
+    //   <p>项目forks：${forks}</p>
+    //   <p>开源协议：${license}</p>
+    //   </div>`
+    // }
+    // );
+    return cozeRes;
   }
 
   async getRepoExtraInfo(name) {

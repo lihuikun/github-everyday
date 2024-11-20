@@ -6,7 +6,7 @@ import { UpdateGithubDto } from './dto/update-github.dto';
 import axios from 'axios';
 @Injectable()
 export class GithubService {
-  constructor(private readonly emailService: EmailService, private readonly cozeService: CozeService) { }
+  constructor(private readonly emailService: EmailService) { }
   create(createGithubDto: CreateGithubDto) {
     return 'This action adds a new github';
   }
@@ -50,7 +50,7 @@ export class GithubService {
         docUrl: `https://cdn.jsdelivr.net/gh/${item.repo_name}/README.md`,
         url: `https://github.com/${item.repo_name}`,
       };
-    }).slice(0, 1);
+    }).slice(0, 5);
     for (let i = 0; i < list.length; i++) {
       const item = list[i]
       const baseInfo = await this.getRepoExtraInfo(item.repoName);
@@ -59,27 +59,36 @@ export class GithubService {
         ...baseInfo
       }
     }
-    const {
-      name, url, lang, stars, docUrl, forks, license
-    } = list[0]
-    const cozeRes = this.cozeService.coze(url)
+    // 使用map函数遍历list数组，并为每个项目生成一个HTML字符串
+    const htmlParts = list.map(project => `
+    <div style="margin-bottom: 20px;background-color: #f0f0f0;padding: 10px;border-radius: 5px;">
+      <p>开源项目：${project.name}</p>
+      <p>项目地址：${project.url}</p>
+      <p>开发语言：${project.lang}</p>
+      <p>项目星星：${project.stars}</p>
+      <p>项目文档：${project.docUrl}</p>
+      <p>项目forks：${project.forks}</p>
+      <p>开源协议：${project.license}</p>
+    </div>
+    `);
+
+    // 将所有项目的HTML字符串连接成一个单一的字符串
+    const htmlContent = htmlParts.join('');
+    // const {
+    //   name, url, lang, stars, docUrl, forks, license
+    // } = list[0]
+    // const cozeRes = this.cozeService.coze(url)
     // 调用邮件服务发送邮件
-    // await this.emailService.sendEmail({
-    //   to: 'lihk180542@gmail.com',
-    //   subject: 'Github项目推荐',
-    //   text: JSON.stringify(list),
-    //   html: `<div>
-    //   <p>开源项目：${name}</p>
-    //   <p>项目地址：${url}</p>
-    //   <p>开发语言：${lang}</p>
-    //   <p>项目星星：${stars}</p>
-    //   <p>项目文档：${docUrl}</p>
-    //   <p>项目forks：${forks}</p>
-    //   <p>开源协议：${license}</p>
-    //   </div>`
-    // }
-    // );
-    return cozeRes;
+    await this.emailService.sendEmail({
+      to: 'lihk180542@gmail.com',
+      subject: 'Github项目每日推荐',
+      text: JSON.stringify(list),
+      html: htmlContent
+    }
+    );
+    console.log('发送邮件啦~', list)
+    return list;
+    // return cozeRes;
   }
 
   async getRepoExtraInfo(name) {

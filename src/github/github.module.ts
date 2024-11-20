@@ -5,8 +5,9 @@ import { EmailModule } from 'src/email/email.module';
 import { CozeModule } from 'src/coze/coze.module';
 
 @Module({
-  imports: [EmailModule,CozeModule],
+  imports: [EmailModule, CozeModule],
   controllers: [GithubController],
   providers: [GithubService],
+  exports: [GithubService]
 })
-export class GithubModule {}
+export class GithubModule { }

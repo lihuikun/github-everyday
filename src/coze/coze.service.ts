@@ -23,7 +23,8 @@ export class CozeService {
       },
       data: JSON.stringify(config.body),
     })
-    console.log("🚀 ~ CozeService ~ coze ~ config:", res.data['messages'][2]['content'])
-    return res.data['messages'][2]['content']
+    console.log(res.data);
+    
+    return res.data['messages'][2]['content'] || '暂无分析结果'
   }
 }

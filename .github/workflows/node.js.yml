@@ -1,0 +1,49 @@
+name: Node.js CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '00 0 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm' # 这里使用 'npm' 缓存，因为我们需要先安装 pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Use Node.js ${{ matrix.node-version }} with pnpm cache
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm' # 现在使用 'pnpm' 缓存
+
+      - name: Install dependencies with pnpm
+        run: pnpm install
+
+      - name: Build the source code
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test # 假设您的测试脚本在 package.json 中命名为 "test"
+
+    env:
+      NEST_EMAIL: ${{ secrets.NEST_EMAIL }}
+      NEST_EMAIL_PASSWORD: ${{ secrets.NEST_EMAIL_PASSWORD }}
+      COZE_API_KEY: ${{ secrets.COZE_API_KEY }}
+      COZE_BOT_ID: ${{ secrets.COZE_BOT_ID }}

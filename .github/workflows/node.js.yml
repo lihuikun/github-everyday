@@ -15,16 +15,30 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          cache: 'npm' # 这里使用 'npm' 缓存，因为我们需要先安装 pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Use Node.js ${{ matrix.node-version }} with pnpm cache
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm' # 现在使用 'pnpm' 缓存
+
       - name: Install dependencies with pnpm
         run: pnpm install
+
       - name: Build the source code
         run: pnpm build
+
       - name: Run tests
         run: pnpm start
     env:

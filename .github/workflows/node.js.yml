@@ -40,7 +40,8 @@ jobs:
         run: pnpm build
 
       - name: Run tests
-        run: pnpm start
+        run: pnpm test # 假设您的测试脚本在 package.json 中命名为 "test"
+
     env:
       NEST_EMAIL: ${{ secrets.NEST_EMAIL }}
       NEST_EMAIL_PASSWORD: ${{ secrets.NEST_EMAIL_PASSWORD }}

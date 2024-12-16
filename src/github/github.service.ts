@@ -212,7 +212,7 @@ formatIsoDate(isoString) {
         forks: response.data.forks_count,
         license: response.data?.license?.name || "暂无",
         open_issues:response.data?.open_issues,
-        desc:response.data?.description,
+        description:response.data?.description,
         pushed_at:this.formatIsoDate(response.data?.pushed_at),
         updated_at:this.formatIsoDate(response.data?.updated_at),
         created_at:this.formatIsoDate(response.data?.created_at),

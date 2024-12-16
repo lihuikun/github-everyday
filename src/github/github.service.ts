@@ -95,7 +95,7 @@ export class GithubService {
     }
     );
     console.log('发送邮件啦~', list)
-    this.getCozeRes(list)
+    // this.getCozeRes(list)
     return list;
     // return cozeRes;
   }

@@ -57,7 +57,7 @@ export class GithubService {
         docUrl: `https://cdn.jsdelivr.net/gh/${item.repo_name}/README.md`,
         url: `https://github.com/${item.repo_name}`,
       };
-    }).slice(0, 2);
+    }).slice(0, 9);
     for (let i = 0; i < list.length; i++) {
       const item = list[i]
       const baseInfo = await this.getRepoExtraInfo(item.repoName);

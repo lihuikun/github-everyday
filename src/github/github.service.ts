@@ -72,10 +72,15 @@ export class GithubService {
       <p>开源项目：${project.name}</p>
       <p>项目地址：${project.url}</p>
       <p>开发语言：${project.lang}</p>
+      <p>描述：${project.description}</p>
       <p>项目星星：${project.stars}</p>
       <p>项目文档：${project.docUrl}</p>
       <p>项目forks：${project.forks}</p>
       <p>开源协议：${project.license}</p>
+      <p>未关闭issue：${project.open_issues}</p>
+      <p>创建时间：${project.created_at}</p>
+      <p>更新时间：${project.updated_at}</p>
+      <p>最后推送时间：${project.pushed_at}</p>
     </div>
     `);
 
@@ -194,7 +199,10 @@ export class GithubService {
     html += `</div>`;
     return html;
   }
-
+formatIsoDate(isoString) {
+  // 替换T为一个空格，移除Z
+  return isoString.replace(/T/g, ' ').replace(/Z/g, '');
+}
   async getRepoExtraInfo(name) {
     try {
       const response = await axios.get(`https://api.github.com/repos/${name}`);
@@ -202,6 +210,11 @@ export class GithubService {
         stars: response.data.stargazers_count,
         forks: response.data.forks_count,
         license: response.data?.license?.name || "暂无",
+        open_issues:response.data?.open_issues,
+        desc:response.data?.description,
+        pushed_at:this.pushed_at(response.data?.pushed_at),
+        updated_at:this.pushed_at(response.data?.updated_at),
+        created_at:this.pushed_at(response.data?.created_at),
       };
     } catch (error) {
       return {

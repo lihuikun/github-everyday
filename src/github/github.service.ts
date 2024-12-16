@@ -26,7 +26,7 @@ export class GithubService {
     const config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: `https://api.ossinsight.io/v1/trends/repos?period=past_week&language=${lang}`,
+      url: `https://api.ossinsight.io/v1/trends/repos?period=past_24_hours&language=${lang}`,
       headers: {
         Accept: "application/json",
       },
@@ -90,7 +90,8 @@ export class GithubService {
     }
     );
     console.log('发送邮件啦~', list)
-    return this.getCozeRes(list);
+    this.getCozeRes(list)
+    return list;
     // return cozeRes;
   }
   async getCozeRes(list: any[]) {

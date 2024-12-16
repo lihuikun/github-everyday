@@ -206,15 +206,16 @@ formatIsoDate(isoString) {
   async getRepoExtraInfo(name) {
     try {
       const response = await axios.get(`https://api.github.com/repos/${name}`);
+      console.error(`处理 ${name} 的coze失败:`, response);
       return {
         stars: response.data.stargazers_count,
         forks: response.data.forks_count,
         license: response.data?.license?.name || "暂无",
         open_issues:response.data?.open_issues,
         desc:response.data?.description,
-        pushed_at:this.pushed_at(response.data?.pushed_at),
-        updated_at:this.pushed_at(response.data?.updated_at),
-        created_at:this.pushed_at(response.data?.created_at),
+        pushed_at:this.formatIsoDate(response.data?.pushed_at),
+        updated_at:this.formatIsoDate(response.data?.updated_at),
+        created_at:this.formatIsoDate(response.data?.created_at),
       };
     } catch (error) {
       return {

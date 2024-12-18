@@ -38,7 +38,6 @@ export class GithubService {
           data: rows[0].list_data  // 需要解析JSON字符串
         };
       }
-      console.log(11);
 
       // 如果没有今天的数据，则请求API
       const config = {
@@ -91,7 +90,6 @@ export class GithubService {
         ...list[i],
         ...baseInfo
       }
-      return
     }
     // 使用map函数遍历list数组，并为每个项目生成一个HTML字符串
     const htmlParts = list.map(project => `

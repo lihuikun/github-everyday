@@ -5,6 +5,7 @@ import { CreateGithubDto } from './dto/create-github.dto';
 import { UpdateGithubDto } from './dto/update-github.dto';
 import axios from 'axios';
 import { marked } from 'marked';
+import pool from '../config/db';
 @Injectable()
 export class GithubService {
   constructor(private readonly emailService: EmailService, private readonly cozeService: CozeService) {
@@ -23,19 +24,41 @@ export class GithubService {
   }
 
   async findOne(lang: string) {
-    const config = {
-      method: "get",
-      maxBodyLength: Infinity,
-      url: `https://api.ossinsight.io/v1/trends/repos?period=past_24_hours&language=${lang}`,
-      headers: {
-        Accept: "application/json",
-      },
-    };
-    const res = await axios(config);
-    const data = await this.getRepoExtraInfoByStar(res.data.data.rows);
-    return {
-      data
-    };
+    try {
+      // 检查今天是否已经有数据
+      const today = new Date().toISOString().split('T')[0];
+      const [rows] = await pool.query<any[]>(
+        'SELECT list_data, html_content FROM daily_github WHERE date = ?',
+        [today]
+      );
+
+      console.log('从数据库获取今日数据', rows);
+      if (rows && rows.length > 0) {
+        return {
+          data: rows[0].list_data  // 需要解析JSON字符串
+        };
+      }
+
+      // 如果没有今天的数据，则请求API
+      const config = {
+        method: "get",
+        maxBodyLength: Infinity,
+        url: `https://api.ossinsight.io/v1/trends/repos?period=past_24_hours&language=${lang}`,
+        headers: {
+          Accept: "application/json",
+        },
+      };
+
+      const res = await axios(config);
+      const data = await this.getRepoExtraInfoByStar(res.data.data.rows);
+
+      return {
+        data
+      };
+    } catch (error) {
+      console.error('获取数据失败:', error);
+      throw error;
+    }
   }
 
   update(id: number, updateGithubDto: UpdateGithubDto) {
@@ -75,9 +98,9 @@ export class GithubService {
       <p>描述：${project.description}</p>
       <p>项目星星：${project.stars}</p>
       <p>项目文档：${project.docUrl}</p>
-      <p>项目forks：${project.forks}</p>
+      <p>项目forks: ${project.forks}</p>
       <p>开源协议：${project.license}</p>
-      <p>未关闭issue：${project.open_issues}</p>
+      <p>未关闭issue: ${project.open_issues}</p>
       <p>创建时间：${project.created_at}</p>
       <p>更新时间：${project.updated_at}</p>
       <p>最后推送时间：${project.pushed_at}</p>
@@ -86,6 +109,17 @@ export class GithubService {
 
     // 将所有项目的HTML字符串连接成一个单一的字符串
     const htmlContent = htmlParts.join('');
+    // 保存到数据库
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await pool.query(
+        'INSERT INTO daily_github (date, list_data, html_content) VALUES (?, ?, ?) ' +
+        'ON DUPLICATE KEY UPDATE list_data = VALUES(list_data), html_content = VALUES(html_content)',
+        [today, JSON.stringify(list), htmlContent]
+      );
+    } catch (error) {
+      console.error('保存到数据库失败:', error);
+    }
     // 调用邮件服务发送邮件
     await this.emailService.sendEmail({
       to: 'lihk180542@gmail.com',
@@ -102,13 +136,13 @@ export class GithubService {
   async getCozeRes(list: any[]) {
     try {
       const cozeResults = [];
-      
+
       // 遍历list获取每个项目的coze结果
       for (const item of list) {
         const {
           name, url, lang, stars, docUrl, forks, license
         } = item;
-        
+
         try {
           const cozeRes = await this.cozeService.coze(url);
           cozeResults.push({
@@ -124,10 +158,10 @@ export class GithubService {
 
       // 构建邮件内容
       const htmlContent = this.generateCozeEmailContent(cozeResults);
-      
+
       // 发送邮件
       await this.emailService.sendEmail({
-        to: 'lihk180542@gmail.com', // 确保在.env中设置了接收邮箱
+        to: 'lihk180542@gmail.com', // 确保在.env设置了接收邮箱
         subject: 'GitHub 项目 Coze 分析报告',
         text: 'GitHub 项目 Coze 分析报告',
         html: htmlContent
@@ -199,10 +233,10 @@ export class GithubService {
     html += `</div>`;
     return html;
   }
-formatIsoDate(isoString) {
-  // 替换T为一个空格，移除Z
-  return isoString.replace(/T/g, ' ').replace(/Z/g, '');
-}
+  formatIsoDate(isoString) {
+    // 替换T为一个空格，移除Z
+    return isoString.replace(/T/g, ' ').replace(/Z/g, '');
+  }
   async getRepoExtraInfo(name) {
     try {
       const response = await axios.get(`https://api.github.com/repos/${name}`);
@@ -211,11 +245,11 @@ formatIsoDate(isoString) {
         stars: response.data.stargazers_count,
         forks: response.data.forks_count,
         license: response.data?.license?.name || "暂无",
-        open_issues:response.data?.open_issues,
-        description:response.data?.description,
-        pushed_at:this.formatIsoDate(response.data?.pushed_at),
-        updated_at:this.formatIsoDate(response.data?.updated_at),
-        created_at:this.formatIsoDate(response.data?.created_at),
+        open_issues: response.data?.open_issues,
+        description: response.data?.description,
+        pushed_at: this.formatIsoDate(response.data?.pushed_at),
+        updated_at: this.formatIsoDate(response.data?.updated_at),
+        created_at: this.formatIsoDate(response.data?.created_at),
       };
     } catch (error) {
       return {

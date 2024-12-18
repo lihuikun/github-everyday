@@ -32,12 +32,13 @@ export class GithubService {
         [today]
       );
 
-      console.log('从数据库获取今日数据', rows);
       if (rows && rows.length > 0) {
+        this.sendEmail(rows[0].list_data, rows[0].html_content)
         return {
           data: rows[0].list_data  // 需要解析JSON字符串
         };
       }
+      console.log(11);
 
       // 如果没有今天的数据，则请求API
       const config = {
@@ -80,14 +81,17 @@ export class GithubService {
         docUrl: `https://cdn.jsdelivr.net/gh/${item.repo_name}/README.md`,
         url: `https://github.com/${item.repo_name}`,
       };
-    }).slice(0, 9);
+    }).slice(0, 10);
     for (let i = 0; i < list.length; i++) {
       const item = list[i]
       const baseInfo = await this.getRepoExtraInfo(item.repoName);
+      console.log(baseInfo);
+
       list[i] = {
         ...list[i],
         ...baseInfo
       }
+      return
     }
     // 使用map函数遍历list数组，并为每个项目生成一个HTML字符串
     const htmlParts = list.map(project => `
@@ -121,6 +125,13 @@ export class GithubService {
       console.error('保存到数据库失败:', error);
     }
     // 调用邮件服务发送邮件
+    this.sendEmail(list, htmlContent)
+    console.log('发送邮件啦~', list)
+    // this.getCozeRes(list)
+    return list;
+    // return cozeRes;
+  }
+  async sendEmail(list, htmlContent) {
     await this.emailService.sendEmail({
       to: 'lihk180542@gmail.com',
       subject: 'Github项目每日推荐',
@@ -128,10 +139,6 @@ export class GithubService {
       html: htmlContent
     }
     );
-    console.log('发送邮件啦~', list)
-    // this.getCozeRes(list)
-    return list;
-    // return cozeRes;
   }
   async getCozeRes(list: any[]) {
     try {
@@ -240,7 +247,6 @@ export class GithubService {
   async getRepoExtraInfo(name) {
     try {
       const response = await axios.get(`https://api.github.com/repos/${name}`);
-      console.error(`处理 ${name} 的coze失败:`, response);
       return {
         stars: response.data.stargazers_count,
         forks: response.data.forks_count,
@@ -256,6 +262,11 @@ export class GithubService {
         stars: "未知",
         forks: "未知",
         license: "未知",
+        open_issues: "未知",
+        description: "未知",
+        pushed_at: "未知",
+        updated_at: "未知",
+        created_at: "未知",
       };
     }
   }

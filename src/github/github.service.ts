@@ -28,10 +28,9 @@ export class GithubService {
       // 检查今天是否已经有数据
       const today = new Date().toISOString().split('T')[0];
       const [rows] = await pool.query<any[]>(
-        'SELECT list_data, html_content FROM daily_github WHERE date = ?',
-        [today]
+        'SELECT list_data, html_content FROM daily_github WHERE date = ? AND lang = ?',
+        [today, lang]
       );
-
       if (rows && rows.length > 0) {
         this.sendEmail(rows[0].list_data, rows[0].html_content)
         return {
@@ -50,7 +49,7 @@ export class GithubService {
       };
 
       const res = await axios(config);
-      const data = await this.getRepoExtraInfoByStar(res.data.data.rows);
+      const data = await this.getRepoExtraInfoByStar(res.data.data.rows, lang);
 
       return {
         data
@@ -69,7 +68,7 @@ export class GithubService {
     return `This action removes a #${id} github`;
   }
   // 根据star来排序
-  async getRepoExtraInfoByStar(list) {
+  async getRepoExtraInfoByStar(list, lang) {
     list.sort((a, b) => b.stars - a.stars);
     list = list.map((item) => {
       return {
@@ -84,7 +83,6 @@ export class GithubService {
     for (let i = 0; i < list.length; i++) {
       const item = list[i]
       const baseInfo = await this.getRepoExtraInfo(item.repoName);
-      console.log(baseInfo);
 
       list[i] = {
         ...list[i],
@@ -115,16 +113,17 @@ export class GithubService {
     try {
       const today = new Date().toISOString().split('T')[0];
       await pool.query(
-        'INSERT INTO daily_github (date, list_data, html_content) VALUES (?, ?, ?) ' +
+        'INSERT INTO daily_github (date, lang, list_data, html_content) VALUES (?, ?, ?, ?) ' +
         'ON DUPLICATE KEY UPDATE list_data = VALUES(list_data), html_content = VALUES(html_content)',
-        [today, JSON.stringify(list), htmlContent]
+        [today, lang, JSON.stringify(list), htmlContent]
       );
+      console.log(today, lang, '-------');
+
     } catch (error) {
       console.error('保存到数据库失败:', error);
     }
     // 调用邮件服务发送邮件
     this.sendEmail(list, htmlContent)
-    console.log('发送邮件啦~', list)
     // this.getCozeRes(list)
     return list;
     // return cozeRes;
